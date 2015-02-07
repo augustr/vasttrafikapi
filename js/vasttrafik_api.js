@@ -1,5 +1,3 @@
-var stationId = '9021014005460000';
-
 function VasttrafikApi (authKey, callback) {
     this.authKey  = authKey;
     this.callback = callback;
