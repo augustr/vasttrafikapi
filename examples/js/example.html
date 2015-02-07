@@ -1,0 +1,131 @@
+<html>
+<head>
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/2.0.0/jquery.min.js"></script>
+<script src="../../js/vasttrafik_api.js"></script>
+
+<script type="text/javascript">
+$(document).ready(function() {
+    updateDepartures();
+});
+
+function updateDepartures() {
+    // Remember to change the authKey to your api key
+    var authKey   = '00000000-0000-0000-0000-000000000000';
+
+    // Redbergsplatsen
+    var stationId = '9021014005460000';
+
+    var api = new VasttrafikApi(authKey, departuresCallback);
+    
+    api.getDepartures(stationId);
+    
+    setTimeout(updateDepartures, 10000);
+}
+
+function departuresCallback(departures) {
+    $("#vasttrafik").html('');
+    for (var k in departures) {
+        var departure = departures[k];
+        
+        var r = hexToRgb(departure.fgColor).r;
+        var g = hexToRgb(departure.fgColor).g;
+        var b = hexToRgb(departure.fgColor).b;
+        
+        var colorString = "rgba(" + r + "," + g + "," + b + ",1.0)";
+        
+        $("#vasttrafik").append($('<div>', {
+                                            text: departure.number,
+                                            class: 'box',
+                                         }).css("background", colorString));
+        $("#vasttrafik").append($('<div>', {
+                                            text: departure.destination,
+                                            class: 'title',
+                                           }));
+        $("#vasttrafik").append($('<div>', {
+                                            text: departure.nextMin,
+                                            class: 'title',
+                                           }));
+        $("#vasttrafik").append($('<div>', {
+                                            text: departure.nextNextMin,
+                                            class: 'title',
+                                           }));
+        $("#vasttrafik").append($('<div>').css('clear', 'both'));
+    }
+}
+
+function hexToRgb(hex) {
+    // Expand shorthand form (e.g. "03F") to full form (e.g. "0033FF")
+    var shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
+    hex = hex.replace(shorthandRegex, function(m, r, g, b) {
+        return r + r + g + g + b + b;
+    });
+
+    var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? {
+        r: parseInt(result[1], 16),
+        g: parseInt(result[2], 16),
+        b: parseInt(result[3], 16)
+    } : null;
+}
+
+</script>
+
+<style type="text/css">
+#vasttrafik {
+    margin: 1em;
+}
+
+div.title {
+    height: 1.2em;
+    font-family: 'PT Sans', arial, serif;
+    color:#ffffff;
+    font-size:24px;
+    font-weight:bold;
+    float: left;
+    text-align:center;
+    line-height: 2.71em;
+    display: inline-block;
+    margin-left: 1em;
+    
+    text-shadow: /* Simulating Text Stroke */
+    -1px -1px 0 #000, 
+    1px -1px 0 #000, 
+    -1px 1px 0 #000, 
+    1px 1px 0 #000;
+}
+
+div.box {
+    width: 1.2em;
+    height: 1.2em;
+    display: inline-block;
+    text-decoration: none;
+    line-height: 1.2em;
+    margin: 0.25em;
+    float: left;
+    
+    font-family: 'PT Sans', arial, serif;
+    color:#ffffff;
+    text-align:center;
+    font-size:24px;
+    font-weight:bold;
+
+    padding:0.5em;
+
+    text-shadow: /* Simulating Text Stroke */
+        -1px -1px 0 #000, 
+        1px -1px 0 #000, 
+        -1px 1px 0 #000, 
+        1px 1px 0 #000;
+
+    border: 1px solid rgba(0,0,0,0.5);
+
+    border-radius: 5px;
+    -moz-border-radius: 5px;
+    -webkit-border-radius: 5px;
+}
+</style>
+</head>
+<body>
+<div id="vasttrafik"></div>
+</body>
+</html>
