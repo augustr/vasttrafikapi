@@ -159,8 +159,8 @@ function VasttrafikApi (authKey, callback) {
 VasttrafikApi.prototype.getDepartures = function(stationId)
 {
     var now  = new Date();
-    var date = now.format("Y-m-d");
-    var time = now.format("H:i");
+    var date = now.toISOString().substring(0,10);
+    var time = now.toISOString().substring(11,16);
 
     this.getStation(this.authKey, stationId, date, time);
 }
