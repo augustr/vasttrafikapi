@@ -86,7 +86,7 @@ function VasttrafikApi (authKey, callback) {
                           };
 
         $.ajax({
-            type:     'post',
+            method:   'get',
             url:      'http://api.vasttrafik.se/bin/rest.exe/v1/departureBoard',
             dataType: 'jsonp',
             jsonp:    'jsonpCallback',
