@@ -170,9 +170,6 @@ namespace VasttrafikSharp
 
         private WebResponse GetREST(string url, string accessToken, Dictionary<string, string> parameters)
         {
-            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
-            request.Method = "POST";
-
             // Build query string
             string queryString = string.Empty;
             foreach (KeyValuePair<string, string> kvp in parameters)
@@ -181,17 +178,11 @@ namespace VasttrafikSharp
             }
             queryString = queryString.TrimEnd('&');
 
-            string postData = string.Format(queryString);
-            byte[] data = Encoding.UTF8.GetBytes(postData);
+            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url + "?" + queryString);
+            request.Method = "GET";
 
             request.ContentType = "application/x-www-form-urlencoded";
             request.Accept = "application/xml";
-            request.ContentLength = data.Length;
-
-            using (Stream requestStream = request.GetRequestStream())
-            {
-                requestStream.Write(data, 0, data.Length);
-            }
 
             try
             {
