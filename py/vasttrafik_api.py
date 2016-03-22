@@ -54,7 +54,7 @@ class VasttrafikApi:
         return json.load(response)
 
     def _get_departure_time(self, departure):
-        return departure['rtTime'] if departure['rtTime'] != None else departure['time']
+        return departure['rtTime'] if 'rtTime' in departure and departure['rtTime'] != None else departure['time']
 
     def _all_bins_have_atleast_two_items(self, departure_bins):
         if len(departure_bins) == 0:
