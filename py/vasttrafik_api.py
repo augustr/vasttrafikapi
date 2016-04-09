@@ -2,6 +2,7 @@ import datetime
 import urllib
 import urllib2
 import json
+import re
 
 class VasttrafikApi:
     _auth_key = None
@@ -100,9 +101,9 @@ class VasttrafikApi:
         departures_array = []
         for k in departures:
             departures_array.append([k, departures[k]])
-        
+
         filtered_result = [ a for a in departures_array if a[1][0]['name'] != 'LOC' ]
-        sorted_result   = sorted(filtered_result, lambda a,b: 1 if int(a[1][0]['name'].split(' ')[1]) > int(b[1][0]['name'].split(' ')[1]) else -1)
+        sorted_result   = sorted(filtered_result, lambda a,b: 1 if int(re.sub("[^0-9]", "", a[1][0]['sname'])) > int(re.sub("[^0-9]", "", b[1][0]['sname'])) else -1)
         
         for result in sorted_result:
             key = result[0]
@@ -110,7 +111,7 @@ class VasttrafikApi:
                 value = result[1][0]
 
                 vehicle_info = {}
-                vehicle_info['number'] = value['name'].split(' ')[1]
+                vehicle_info['number'] = value['sname']
                 direction = value['direction']
                 if direction.find(" via ") != -1:
                     direction = direction[0, direction.find(" via ")]
