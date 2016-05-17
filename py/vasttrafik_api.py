@@ -28,16 +28,17 @@ class VasttrafikApi:
         while not self._all_bins_have_atleast_two_items(departure_bins) and attempts < 5:
             attempts += 1
 
-            result     = self._get_departure_board(auth_key, station_id, date, time)
-            departures = result['DepartureBoard']['Departure']
+            result = self._get_departure_board(auth_key, station_id, date, time)
+            if result is not None and 'DepartureBoard' in result and 'Departure' in result['DepartureBoard']:
+                departures = result['DepartureBoard']['Departure']
 
-            if len(departures) > 0:
-                last_departure = departures[-1]
+                if len(departures) > 0:
+                    last_departure = departures[-1]
 
-                last_date = last_departure['date']
-                last_time = self._get_departure_time(last_departure)
+                    last_date = last_departure['date']
+                    last_time = self._get_departure_time(last_departure)
 
-            self._place_departures_in_bins(departures, departure_bins)
+                self._place_departures_in_bins(departures, departure_bins)
 
         return self._process_departures(departure_bins)
 
@@ -114,7 +115,7 @@ class VasttrafikApi:
                 vehicle_info['number'] = value['sname']
                 direction = value['direction']
                 if direction.find(" via ") != -1:
-                    direction = direction[0, direction.find(" via ")]
+                    direction = direction[0:direction.find(" via ")]
 
                 vehicle_info['destination'] = direction
                 vehicle_info['fgColor']     = value['fgColor']
