@@ -52,8 +52,12 @@ class VasttrafikApi:
         url = 'http://api.vasttrafik.se/bin/rest.exe/v1/departureBoard'
         data = urllib.urlencode(parameters)
         request = urllib2.Request(url + '?' + data)
-        response = urllib2.urlopen(request)
-        return json.load(response)
+        try:
+            response = urllib2.urlopen(request)
+            result = json.load(response)
+            return result
+        except Exception, e:
+            return {}
 
     def _get_departure_time(self, departure):
         return departure['rtTime'] if 'rtTime' in departure and departure['rtTime'] != None else departure['time']
