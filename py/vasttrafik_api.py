@@ -1,24 +1,53 @@
 import datetime
-import urllib
-import urllib2
 import json
 import re
+import base64
+import requests
+
+from datetime import timedelta
+
+TOKEN_URL    = 'https://api.vasttrafik.se/token'
+API_BASE_URL = 'https://api.vasttrafik.se/bin/rest.exe/v2'
 
 class VasttrafikApi:
-    _auth_key = None
-    _callback = None
+    _auth_key          = None
+    _secret            = None
+    _callback          = None
+    _token             = None
+    _token_expire_date = None
 
-    def __init__(self, auth_key):
+    def __init__(self, auth_key, secret):
         self._auth_key = auth_key
+        self._secret   = secret
+        self.update_token()
+
+    # Inspired by: https://github.com/persandstrom/python-vasttrafik/blob/master/vasttrafik/journy_planner.py
+    def update_token(self):
+        headers = {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Authorization': 'Basic ' + base64.b64encode(
+                (self._auth_key + ':' + self._secret).encode()).decode()
+            }
+        data = {'grant_type': 'client_credentials'}
+
+        response = requests.post(TOKEN_URL, data=data, headers=headers)
+        
+        if response.status_code != 200:
+            print("[VasttrafikApi] HTTP Error response {}: {}".format(str(response.status_code), str(str(response.content))))
+            return
+        
+        obj = json.loads(response.content.decode('UTF-8'))
+        self._token = obj['access_token']
+        self._token_expire_date = datetime.datetime.now() + timedelta(seconds = obj['expires_in'])
 
     def get_departures(self, station_id):
         now  = datetime.datetime.now()
         date = now.isoformat()[0:10]
         time = now.isoformat()[11:16]
 
-        return self._get_station(self._auth_key, station_id, date, time)
+        return self._get_station(station_id, date, time)
 
-    def _get_station(self, auth_key, station_id, date, time):
+    def _get_station(self, station_id, date, time):
         departure_bins = {}
 
         attempts = 0
@@ -28,7 +57,7 @@ class VasttrafikApi:
         while not self._all_bins_have_atleast_two_items(departure_bins) and attempts < 5:
             attempts += 1
 
-            result = self._get_departure_board(auth_key, station_id, date, time)
+            result = self._get_departure_board(station_id, date, time)
             if result is not None and 'DepartureBoard' in result and 'Departure' in result['DepartureBoard']:
                 departures = result['DepartureBoard']['Departure']
 
@@ -42,21 +71,33 @@ class VasttrafikApi:
 
         return self._process_departures(departure_bins)
 
-    def _get_departure_board(self, auth_key, station_id, date, time):
-        parameters = {'authKey': auth_key,
-                      'date'   : date,
+    def _get_departure_board(self, station_id, date, time):
+        parameters = {'date'   : date,
                       'time'   : time,
                       'id'     : station_id,
                       'format' : 'json',
                      }
-        url = 'http://api.vasttrafik.se/bin/rest.exe/v1/departureBoard'
-        data = urllib.urlencode(parameters)
-        request = urllib2.Request(url + '?' + data)
+        #data = urllib.urlencode(parameters)
+        data = "&".join(["{}={}".format(key, value) for key, value in parameters.items()])
+        
+        url = '{}/{}?{}&format=json'.format(API_BASE_URL, 'departureBoard', data)
+        
+        # Update token if expiring
+        if datetime.datetime.now() > self._token_expire_date:
+            self.update_token()
+
+        headers = {'Authorization': 'Bearer ' + self._token}
+
         try:
-            response = urllib2.urlopen(request)
-            result = json.load(response)
-            return result
+            response = requests.get(url, headers=headers)
+            if response.status_code == 200:
+                result = json.loads(response.content.decode('UTF-8'))
+                return result
+            else:
+                print("[VasttrafikApi] HTTP Error response {}: {}".format(str(response.status_code), str(str(response.content))))
+                return {}
         except Exception, e:
+            print("[VasttrafikApi] Request exception: {}".format(str(e)))
             return {}
 
     def _get_departure_time(self, departure):
